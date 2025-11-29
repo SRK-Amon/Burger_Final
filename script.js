@@ -35,14 +35,14 @@ const products = {
       }
       return (this.price + extrasTotal) * this.amount;
     },
-    get Cal(){
-      let exstrasCalTotal = 0 ;
-      for(let key in this.extras){
+    get Cal() {
+      let exstrasCalTotal = 0;
+      for (let key in this.extras) {
         if (this.extras[key].checked) {
           exstrasCalTotal += this.extras[key].calories;
         }
       }
-       return (this.calories + exstrasCalTotal) * this.amount
+      return (this.calories + exstrasCalTotal) * this.amount;
     },
   },
   freshBurger: {
@@ -81,14 +81,14 @@ const products = {
       }
       return (this.price + extrasTotal) * this.amount;
     },
-    get Cal(){
-      let exstrasCalTotal = 0 ;
-      for(let key in this.extras){
+    get Cal() {
+      let exstrasCalTotal = 0;
+      for (let key in this.extras) {
         if (this.extras[key].checked) {
           exstrasCalTotal += this.extras[key].calories;
         }
       }
-       return (this.calories + exstrasCalTotal) * this.amount
+      return (this.calories + exstrasCalTotal) * this.amount;
     },
   },
   freshCombo: {
@@ -127,63 +127,125 @@ const products = {
       }
       return (this.price + extrasTotal) * this.amount;
     },
-    get Cal(){
-      let exstrasCalTotal = 0 ;
-      for(let key in this.extras){
+    get Cal() {
+      let exstrasCalTotal = 0;
+      for (let key in this.extras) {
         if (this.extras[key].checked) {
           exstrasCalTotal += this.extras[key].calories;
         }
       }
-      return (this.calories + exstrasCalTotal) * this.amount
+      return (this.calories + exstrasCalTotal) * this.amount;
     },
   },
 };
+function parentPrice(parent, product) {
+  const mainParentPrice = parent.querySelector(".main__product-price span"),
+    mainParentNum = parent.querySelector(".main__product-num"),
+    mainParentKcall = parent.querySelector(".main__product-kcall span");
 
-const productBtns = document.querySelectorAll(".main__product-btn");
-
-productBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const btnData = btn.getAttribute("data-symbol");
-    const parent = btn.closest(".main__product");
-    const parentId = parent.getAttribute("id");
-    const parentNum = parent.querySelector(".main__product-num");
-
-    if (btnData === "-" && products[parentId].amount > 0) {
-      products[parentId].amount--;
-    } else if (btnData === "+") {
-      products[parentId].amount++;
-    }
-
-    parentNum.textContent = products[parentId].amount;
-
-    if (products[parentId].amount > 0) {
-      productSumm(parent, parentId);
-    } else { 
-      const priceElement = parent.querySelector(".main__product-price span");
-      priceElement.innerHTML = 0
-    }
-  });
-});
-
-const allCheckboxes = document.querySelectorAll(".main__product-checkbox");
-allCheckboxes.forEach((checkbox) => {
-  const parent = checkbox.closest(".main__product");
-  const parentId = parent.getAttribute("id");
-  const checkboxData = checkbox.getAttribute("data-extra");
-
-  checkbox.addEventListener("change", () => {
-    products[parentId].extras[checkboxData].checked = checkbox.checked;
-    productSumm(parent, parentId);
-  });
-});
-
-function productSumm(parent, parentId) {
-  const priceElement = parent.querySelector(".main__product-price span"),
-  CaloriesElement = parent.querySelector(".main__product-kcall span");
-  priceElement.innerHTML = products[parentId].Summ;
-  CaloriesElement.innerHTML = products[parentId].Cal;
+  mainParentNum.innerHTML = product.amount;
+  mainParentPrice.innerHTML = product.Summ;
+  mainParentKcall.innerHTML = product.Cal;
 }
 
+function addProduct() {
+  const productsArr = [];
+  const receiptWindowOut = document.querySelector(".receipt__window-out"),
+  receiptCardTitle = document.querySelector(".receipt__card--title span");
+  let TotalAmountToPay = 0 
+  for (const key in products) {
+    if (products[key].amount > 0) {
+      productsArr.push(products[key]);
+      TotalAmountToPay+= products[key].Summ
+    }
+  }
+  receiptCardTitle.innerHTML = TotalAmountToPay
+  receiptWindowOut.innerHTML = "";
+  productsArr.forEach((product) => {
+    receiptWindowOut.innerHTML += receiptList(product);
+  });
+
+  mainParents.forEach((parent) => {
+    const id = parent.getAttribute("id");
+    parentPrice(parent, products[id]);
+  });
+
+  
+}
+
+function receiptList(product) {
+  const { id, img, name, amount, Summ } = product;
+  return `
+   <div class="receipt__card">
+        <img src="${img}" class="receipt__card--img" />
+        <div class="receipt__card-info">
+          <h3 class="receipt__card--title">${name}</h3>
+          <p class="receipt__card--price">Total: <span>${Summ}</span> so'm</p>
+        </div>
+        <div class="receipt__card-number">
+          <a class="receipt__card-btn minus" onclick="delAmount(${id})">-</a>
+          <output class="receipt__card-num">${amount}</output>
+          <a class="receipt__card-btn plus" onclick="addAmount(${id})">+</a>
+        </div>
+   </div>`;
+}
+
+function addAmount(id) {
+  for (const key in products) {
+    if (products[key].id === id) {
+      products[key].amount++;
+    }
+  }
+  addProduct();
+}
+
+function delAmount(id) {
+  for (const key in products) {
+    if (products[key].id === id && products[key].amount > 0) {
+      products[key].amount--;
+    }
+  }
+  addProduct();
+}
+
+const mainParents = document.querySelectorAll(".main__product");
+
+mainParents.forEach((parent) => {
+  const parentId = parent.getAttribute("id");
+  const product = products[parentId];
+
+  const btns = parent.querySelectorAll(".main__product-btn");
+  const checkboxes = parent.querySelectorAll(".main__product-checkbox");
+
+  btns.forEach((btn) => {
+    const symbol = btn.getAttribute("data-symbol");
+
+    btn.addEventListener("click", () => {
+      if (symbol === "+") product.amount++;
+      if (symbol === "-" && product.amount > 0) product.amount--;
+
+      parentPrice(parent, product);
+      addProduct();
+    });
+  });
+
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const key = checkbox.getAttribute("data-extra");
+      product.extras[key].checked = checkbox.checked;
+
+      parentPrice(parent, product);
+      addProduct();
+    });
+  });
+});
+
+const receipt = document.querySelector(".receipt"),
+  DeliveryBtn = document.querySelector(".button"),
+  receiptPayBtn = document.querySelector(".receipt__window-btn");
+
+DeliveryBtn.onclick = () => receipt.classList.add("active");
+receiptPayBtn.onclick = () => receipt.classList.remove("active");
 
 const mainProductInfo = document.querySelectorAll(".main__product-info");
 mainProductInfo.forEach((product) => {
